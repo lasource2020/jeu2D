@@ -7,19 +7,12 @@ https://openclassrooms.com/fr/courses/1399541-interface-graphique-pygame-pour-py
 https://openclassrooms.com/fr/courses/235344-apprenez-a-programmer-en-python/232721-apprehendez-les-classes
 
 Python script
-Files: skittymaze.py, lv1, lv2 + images
-
-
-NOTES:
-- skitty duplicates when moving: problem when blitting?
-+ need to implement checking if there's a wall or the window border
-+ and checking if we won
-+ win screen?
-
+Files: skittymaze.py, lv1, lv2, lv3 (debug) + images
 """
 
 import pygame
 from pygame.locals import *
+import time  # for the win animation
 pygame.init()
 
 
@@ -27,11 +20,11 @@ pygame.init()
 
 # window size
 nbSprites = 15   # window is 15x15 (sprites)
-SideSprite = 30
-SideWindow = nbSprites*SideSprite
+SpriteWidth = 30
+WindowWidth = nbSprites*SpriteWidth
 
 # we actually need the window here for the .convert() and .convert_alpha() to work
-window = pygame.display.set_mode((SideWindow, SideWindow))
+window = pygame.display.set_mode((WindowWidth, WindowWidth))
 
 icon = pygame.image.load("icon.png")     # game icon
 title = "Skitty Maze (test)"     # window title
@@ -42,6 +35,14 @@ fond = pygame.image.load("fond.png").convert()
 wall = pygame.image.load("wall.png").convert()
 start = pygame.image.load("start.png").convert()
 goal = pygame.image.load("stone.png").convert_alpha()
+
+delcatty = [pygame.image.load("delcatty/0.png").convert_alpha(), \
+pygame.image.load("delcatty/1.png").convert_alpha(), \
+pygame.image.load("delcatty/2.png").convert_alpha(), \
+pygame.image.load("delcatty/3.png").convert_alpha(), \
+pygame.image.load("delcatty/4.png").convert_alpha(), \
+pygame.image.load("delcatty/5.png").convert_alpha()]
+WinWidth = 150
 
 ### /CONSTANTES ######################################################################################
 
@@ -68,6 +69,8 @@ class Level:
 
         with open(self.file) as lv:
             self.orga = lv.read().split("\n")
+        
+        return self.orga  # so that we can put it in LevelOrga
     
     def BlitLevel(self, window):
         """
@@ -82,15 +85,15 @@ class Level:
             CurrentChar = 0
 
             for char in line:
-                x = CurrentChar *SideSprite
-                y = CurrentLine *SideSprite
+                x = CurrentChar *SpriteWidth
+                y = CurrentLine *SpriteWidth
 
                 if char == "S":    #start
                     window.blit(start, (x, y))
-                    self.start = (x, y)   # start's coordinates
+                    self.start = (CurrentChar, CurrentLine)   # start's coordinates
                 elif char == "G":  #goal
                     window.blit(goal, (x, y))
-                    self.goal = (x, y)    # goal's coordinates
+                    self.goal = (CurrentChar, CurrentLine)    # goal's coordinates
                 elif char == "W":  #wall
                     window.blit(wall, (x, y))
                 
@@ -113,23 +116,35 @@ class Skitty:
         self.pos = pos  #position
         self.spr = spr  #current sprite
 
-    def move(self):
+    def move(self, LevelOrga):
         """
-        checks if the arrows are being pressed & then moves skitty
+        - checks if the arrows are being pressed & then moves skitty
+        - we need move(LevelOrga)
         """
 
         if event.key == K_DOWN:
             self.spr = Skitty.down
-            self.pos[1] += SideSprite
+            self.pos[1] +=1
+            if LevelOrga[skitty.pos[1]][skitty.pos[0]] == "W":
+                self.pos[1] -=1
+
         elif event.key == K_UP:
             self.spr = Skitty.up
-            self.pos[1] -= SideSprite
+            self.pos[1] -=1
+            if LevelOrga[skitty.pos[1]][skitty.pos[0]] == "W":
+                self.pos[1] +=1
+
         elif event.key == K_LEFT:
             self.spr = Skitty.left
-            self.pos[0] -= SideSprite
+            self.pos[0] -= 1
+            if LevelOrga[skitty.pos[1]][skitty.pos[0]] == "W":
+                self.pos[0] +=1
+
         elif event.key == K_RIGHT:
             self.spr = Skitty.right
-            self.pos[0] += SideSprite
+            self.pos[0] += 1
+            if LevelOrga[skitty.pos[1]][skitty.pos[0]] == "W":
+                self.pos[0] -=1
 
 
 ### /CLASSES #########################################################################################
@@ -139,7 +154,8 @@ class Skitty:
 pygame.display.set_icon(icon)
 pygame.display.set_caption(title)  # window title
 
-Level1, Level2 = Level("lv1"), Level("lv2")
+Level1, Level2, Level3 = Level("lv1"), Level("lv2"), Level("lv3")
+LevelOrga = []  # we'll put the level in there too so that skitty can access it
 Menu = True   # menu (or game)
 Level = 0  # what level we're on
 
@@ -153,22 +169,40 @@ def begin(event):
 
     if event.key == K_a:
         Level = 1
-        Level1.GetLevel()
+        LevelOrga = Level1.GetLevel()
         Level1.BlitLevel(window)
         skitty.pos = list(Level1.start).copy()  # it's a list so that we can edit it when moving
 
     elif event.key == K_b:
         Level = 2
-        Level2.GetLevel()
+        LevelOrga = Level2.GetLevel()
         Level2.BlitLevel(window)
-        skitty.pos = list(Level2.start).copy()  # it's a list so that we can edit it when moving
+        skitty.pos = list(Level2.start).copy()
+
+    elif event.key == K_SPACE:
+        Level = 3
+        LevelOrga = Level3.GetLevel()
+        Level3.BlitLevel(window)
+        skitty.pos = list(Level3.start).copy()
+    
+    return Level, LevelOrga
+    # if we don't do this, Level is never changed bc it just creates a local variable
+
+def win():
+    for t in range(5):  # number of loops
+        for i in range(6):  # 1 animation cycle
+            window.blit(fond, (0, 0))
+            window.blit(delcatty[i], ((0.5 *WindowWidth) -(0.5 *WinWidth), (0.5 *WindowWidth) -(0.5 *WinWidth)))
+            pygame.display.flip()
+            time.sleep(0.15)  # so that we can actually SEE it
 
 
-# MAIN LOOP
+##### MAIN LOOP #####
+
 while True:
     while Menu:
         """ menu loop """
-        pygame.time.Clock().tick(15)  # restricting the looping
+        pygame.time.Clock().tick(15)  # restricting the looping per sec
         window.blit(menu, (0,0))
         pygame.display.flip()
 
@@ -177,15 +211,15 @@ while True:
                 pygame.quit() 
 
             if event.type == KEYDOWN:
-                if event.key == K_a or event.key == K_b:
+                if event.key == K_a or event.key == K_b or event.key == K_SPACE:
                     Menu = False   # for exiting the menu
-                    begin(event)
-                    window.blit(skitty.spr, skitty.pos)
+                    Level, LevelOrga = begin(event)
+                    window.blit(skitty.spr, (skitty.pos[0] *SpriteWidth, skitty.pos[1] *SpriteWidth))
                     pygame.display.flip()
 
     while not Menu:
         """ game loop """
-        pygame.time.Clock().tick(20)  # restricting the looping
+        pygame.time.Clock().tick(20)  # restricting the looping per sec
         
         for event in pygame.event.get():
             if event.type == QUIT:
@@ -196,13 +230,18 @@ while True:
                     Menu = True   # back to the menu
                     skitty.spr = Skitty.down  # back to the starting sprite
                 else:
-                    skitty.move()
-            
-        # this is supposed to prevent the duplicating skitty by re-blitting everything
-        # but apparently it doesn't
-        if Level ==1:
-            Level1.BlitLevel(window)
-        elif Level ==2:
-            Level2.BlitLevel(window)
-        window.blit(skitty.spr, skitty.pos)
-        pygame.display.flip()
+                    skitty.move(LevelOrga)
+
+                    if Level ==1:
+                        Level1.BlitLevel(window)
+                    elif Level ==2:
+                        Level2.BlitLevel(window)
+                    elif Level ==3:
+                        Level3.BlitLevel(window)
+                    window.blit(skitty.spr, (skitty.pos[0] *SpriteWidth, skitty.pos[1] *SpriteWidth))
+                    pygame.display.flip()
+
+        if LevelOrga[skitty.pos[1]][skitty.pos[0]] == "G":
+            time.sleep(0.4)
+            win()
+            Menu = True
