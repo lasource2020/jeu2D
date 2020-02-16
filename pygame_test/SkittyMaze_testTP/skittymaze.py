@@ -125,25 +125,33 @@ class Skitty:
         if event.key == K_DOWN:
             self.spr = Skitty.down
             self.pos[1] +=1
-            if LevelOrga[skitty.pos[1]][skitty.pos[0]] == "W":
+            if self.pos[1] > nbSprites-1:
+                self.pos[1] -=1
+            elif LevelOrga[self.pos[1]][self.pos[0]] == "W":
                 self.pos[1] -=1
 
         elif event.key == K_UP:
             self.spr = Skitty.up
             self.pos[1] -=1
-            if LevelOrga[skitty.pos[1]][skitty.pos[0]] == "W":
+            if self.pos[1] < 0:
+                self.pos[1] +=1
+            if LevelOrga[self.pos[1]][self.pos[0]] == "W":
                 self.pos[1] +=1
 
         elif event.key == K_LEFT:
             self.spr = Skitty.left
             self.pos[0] -= 1
-            if LevelOrga[skitty.pos[1]][skitty.pos[0]] == "W":
+            if self.pos[0] < 0:
+                self.pos[0] +=1
+            if LevelOrga[self.pos[1]][self.pos[0]] == "W":
                 self.pos[0] +=1
 
         elif event.key == K_RIGHT:
             self.spr = Skitty.right
             self.pos[0] += 1
-            if LevelOrga[skitty.pos[1]][skitty.pos[0]] == "W":
+            if self.pos[0] > nbSprites-1:
+                self.pos[0] -=1
+            if LevelOrga[self.pos[1]][self.pos[0]] == "W":
                 self.pos[0] -=1
 
 
