@@ -1,7 +1,9 @@
 # jeu2D
   
 TBA  
-  
+ Jeu de quête dans lequel le joueur incarne un petit heros qui doit traverser des "chambres", différentes salles de cartes, afin de pouvoir trouver des pièces de puzzles, dispersées à travers la carte. 
+ *si on a le temps, on ajoutera un petit combat contre un boss final lorsque le héros aura fini de récolter les différentes pièces du puzzle.*
+    
 
   
   
